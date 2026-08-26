@@ -1,3 +1,4 @@
+import os
 import json
 import re
 from pathlib import Path
@@ -18,13 +19,27 @@ def open_movie_file(path_in, path_out):
     movie_path_out.parent.mkdir(parents=True, exist_ok=True)
     return movie_path_in, movie_path_out
 
+def extract_threads():
+    cores = os.cpu_count()
+    if cores <= 2:
+        return 1
+    elif cores <= 4:
+        return 2
+    else:
+        return max(2, cores // 2)
+
+
 def extract_info(movie):
     if movie is None:
         return None
     movie_path_in, movie_path_out = movie
     print("------- Extracting info -------")
     command = [
-        "ffmpeg", "-i", str(movie_path_in),
+        "ffmpeg",
+        "-threads", str(extract_threads()),
+        "-filter_threads", str(extract_threads()),
+        "-vn",
+        "-i", str(movie_path_in),
         "-af", f"loudnorm=I={TARGET_I}:LRA={TARGET_LRA}:tp={TARGET_TP}:print_format=json",
         "-f", "null", "-"
     ]
@@ -58,7 +73,11 @@ def format_movie(metrics, movie):
     )
     movie_path_in, movie_path_out = movie
     command = [
-        "ffmpeg", "-y", "-i", str(movie_path_in),
+        "ffmpeg",
+        "-y",
+        "-threads", str(extract_threads()),
+        "-filter_threads", str(extract_threads()),
+        "-i", str(movie_path_in),
         "-af", filters,
         "-c:v", "copy",
         "-c:a", "aac", "-b:a", "192k",
