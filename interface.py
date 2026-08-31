@@ -1,3 +1,4 @@
+from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication,
@@ -8,7 +9,9 @@ from PySide6.QtWidgets import (
     QLabel,
     QSlider,
     QPushButton,
-    QComboBox
+    QComboBox,
+    QFileDialog,
+    QMessageBox
 )
 
 class Windows(QMainWindow):
@@ -22,15 +25,46 @@ class Windows(QMainWindow):
         self.setCentralWidget(self.mainWidget)
         self.mainLayout = QVBoxLayout(self.mainWidget)
 
+        # Path file
+        #self.pathIn = None
+        #self.pathOut = None
+
         # Controls
         self.sliderI = None
         self.sliderLRA = None
         self.sliderTP = None
 
         # Init app
+        #self.load_file()
         self.get_menu()
         self.get_controls()
 
+    def build_output_path(self, path_in: str, suffix: str= "_convert") -> str:
+        path = Path(path_in)
+        path_out = path.with_name(f"{path.stem}{suffix}{path.suffix}")
+        if not path_out.exists():
+            return str(path_out)
+
+        for i in range(1, 10):
+            path_out = path.with_name(f"{path.stem}{suffix}_{i}{path.suffix}")
+            if not path_out.exists():
+                return str(path_out)
+        raise FileExistsError("No se pudo generar un nombre de archivo de salida único.")
+
+
+    def load_file(self):
+        path_in, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo de video", "", "Video (*.mp4 *.mkv *.avi)")
+        if not path_in:
+            QMessageBox.critical(self, "Error", "No se seleccionó ningún archivo de video.")
+            return
+        try:
+            path_out = self.build_output_path(path_in)
+            # TODO: Agregar la funcion para abrir el archivo en el main.py(open_movie_file).
+            #print(f"Archivo de entrada: {path_in}")
+            #print(f"Archivo de salida: {path_out}")
+        except FileExistsError as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
 
     def get_menu(self):
         options = {
@@ -117,11 +151,14 @@ class Windows(QMainWindow):
         layoutControlsButtons = QHBoxLayout()
 
         cancelBtn = QPushButton("Cancelar")
+        cancelBtn.clicked.connect(self.close)
+
         startBtn = QPushButton("Iniciar")
+        #TODO: Agregar las funciones para extraer la informacion y formatear de main.py.
+
         layoutControlsButtons.addWidget(cancelBtn)
         layoutControlsButtons.addWidget(startBtn)
         layoutControls.addLayout(layoutControlsButtons)
-
 
         self.mainLayout.addLayout(layoutControls)
 
