@@ -19,25 +19,30 @@ class Windows(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Configure video sound")
-        self.setFixedSize(500, 300)
+        self.setFixedSize(600, 400)
 
         self.mainWidget = QWidget()
         self.setCentralWidget(self.mainWidget)
         self.mainLayout = QVBoxLayout(self.mainWidget)
 
         # Path file
-        #self.pathIn = None
-        #self.pathOut = None
+        self.pathIn = None
+        self.pathOut = None
 
         # Controls
         self.sliderI = None
         self.sliderLRA = None
         self.sliderTP = None
 
+        # Start buttons
+        self.startBtn = QPushButton("Iniciar")
+        self.cancelBtn = QPushButton("Cancelar")
+
         # Init app
-        #self.load_file()
-        self.get_menu()
-        self.get_controls()
+        self.open_file_widget()
+        self.get_menu_widget()
+        self.get_controls_widget()
+
 
     def build_output_path(self, path_in: str, suffix: str= "_convert") -> str:
         path = Path(path_in)
@@ -53,20 +58,35 @@ class Windows(QMainWindow):
 
 
     def load_file(self):
-        path_in, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo de video", "", "Video (*.mp4 *.mkv *.avi)")
-        if not path_in:
+        self.pathIn, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo de video", "", "Video (*.mp4 *.mkv *.avi)")
+        if not self.pathIn:
             QMessageBox.critical(self, "Error", "No se seleccionó ningún archivo de video.")
             return
         try:
-            path_out = self.build_output_path(path_in)
+            self.startBtn.setEnabled(True)
+            self.pathOut = self.build_output_path(self.pathIn)
             # TODO: Agregar la funcion para abrir el archivo en el main.py(open_movie_file).
-            #print(f"Archivo de entrada: {path_in}")
-            #print(f"Archivo de salida: {path_out}")
+            #print(f"Archivo de entrada: {pathIn}")
+            #print(f"Archivo de salida: {pathOut}")
         except FileExistsError as e:
             QMessageBox.critical(self, "Error", str(e))
             return
 
-    def get_menu(self):
+    def open_file_widget(self):
+        searchButton = QPushButton("Seleccionar archivo de video")
+        searchButton.clicked.connect(self.load_file)
+
+        self.mainLayout.addWidget(searchButton)
+
+    def apply_option(self, option_name, options):
+        value = options.get(option_name)
+        if value is None:
+            return
+        self.sliderI.setValue(value["target_i"])
+        self.sliderLRA.setValue(value["target_lra"])
+        self.sliderTP.setValue(value["target_tp"])
+
+    def get_menu_widget(self):
         options = {
             "TV / Living": {"target_i": -16, "target_lra": 8, "target_tp": -15},
             "Auriculares": {"target_i": -20, "target_lra": 12, "target_tp": -10},
@@ -81,15 +101,7 @@ class Windows(QMainWindow):
         self.mainLayout.addWidget(titleMenu)
         self.mainLayout.addWidget(comboMenu)
 
-    def apply_option(self, option_name, options):
-        value = options.get(option_name)
-        if value is None:
-            return
-        self.sliderI.setValue(value["target_i"])
-        self.sliderLRA.setValue(value["target_lra"])
-        self.sliderTP.setValue(value["target_tp"])
-
-    def get_controls(self, target_i=-16, target_lra=8, target_tp=-15):
+    def get_controls_widget(self, target_i=-16, target_lra=8, target_tp=-15):
         layoutControls = QVBoxLayout()
 
         # TARGET_I
@@ -150,14 +162,13 @@ class Windows(QMainWindow):
 
         layoutControlsButtons = QHBoxLayout()
 
-        cancelBtn = QPushButton("Cancelar")
-        cancelBtn.clicked.connect(self.close)
+        self.cancelBtn.clicked.connect(self.close)
+        self.startBtn.setEnabled(self.pathIn is not None)
 
-        startBtn = QPushButton("Iniciar")
         #TODO: Agregar las funciones para extraer la informacion y formatear de main.py.
 
-        layoutControlsButtons.addWidget(cancelBtn)
-        layoutControlsButtons.addWidget(startBtn)
+        layoutControlsButtons.addWidget(self.cancelBtn)
+        layoutControlsButtons.addWidget(self.startBtn)
         layoutControls.addLayout(layoutControlsButtons)
 
         self.mainLayout.addLayout(layoutControls)
