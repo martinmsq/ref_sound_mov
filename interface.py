@@ -1,3 +1,4 @@
+from main import MovieProcessor
 from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -13,6 +14,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QMessageBox
 )
+
 
 class Windows(QMainWindow):
     def __init__(self):
@@ -37,6 +39,9 @@ class Windows(QMainWindow):
         # Start buttons
         self.startBtn = QPushButton("Iniciar")
         self.cancelBtn = QPushButton("Cancelar")
+
+        # Init class processor
+        self.processor = MovieProcessor()
 
         # Init app
         self.open_file_widget()
@@ -65,9 +70,7 @@ class Windows(QMainWindow):
         try:
             self.startBtn.setEnabled(True)
             self.pathOut = self.build_output_path(self.pathIn)
-            # TODO: Agregar la funcion para abrir el archivo en el main.py(open_movie_file).
-            #print(f"Archivo de entrada: {pathIn}")
-            #print(f"Archivo de salida: {pathOut}")
+            self.processor.open_movie_file(self.pathIn, self.pathOut)  # Call the open_movie_file method from MovieProcessor
         except FileExistsError as e:
             QMessageBox.critical(self, "Error", str(e))
             return
