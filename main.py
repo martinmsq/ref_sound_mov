@@ -5,6 +5,8 @@ import threading
 from pathlib import Path
 import subprocess
 from typing import Callable, Optional
+import sys
+import os
 
 
 class ProcessingCancelled(Exception):
@@ -17,6 +19,14 @@ class MovieProcessor:
         self.TARGET_I = target_i
         self.TARGET_LRA = target_lra
         self.TARGET_TP = target_tp
+
+    def get_bin_path(self, bin_name: str) -> str:
+        """Obtiene la ruta absoluta al binario, ya sea en desarrollo o empaquetado."""
+        if hasattr(sys, '_MEIPASS'):
+            # Ruta temporal donde PyInstaller extrae los binarios
+            return os.path.join(sys._MEIPASS, bin_name)
+        # Carga desde el PATH en modo desarrollo local
+        return bin_name
 
     def open_movie_file(self, path_in: str, path_out: str)-> tuple[Path, Path]:
         """Abre el archivo de entrada y prepara la ruta de salida."""
@@ -64,7 +74,7 @@ class MovieProcessor:
         """Devuelve la duración del archivo de video en segundos usando ffprobe. None si no se puede obtener."""
         try:
             command = [
-                "ffprobe",
+                self.get_bin_path("ffprobe"),
                 "-v", "error",
                 "-show_entries", "format=duration",
                 "-of", "json",
@@ -192,7 +202,7 @@ class MovieProcessor:
         self._validate_targets()
         duration = self.get_duration(movie_path_in)
         command = [
-            "ffmpeg",
+            self.get_bin_path("ffmpeg"),
             "-threads", str(self.extract_threads()),
             "-filter_threads", str(self.extract_threads()),
             "-vn",
@@ -239,7 +249,7 @@ class MovieProcessor:
         movie_path_in, movie_path_out = movie
         duration = self.get_duration(movie_path_in)
         command = [
-            "ffmpeg",
+            self.get_bin_path("ffmpeg"),
             "-y",
             "-threads", str(self.extract_threads()),
             "-filter_threads", str(self.extract_threads()),
